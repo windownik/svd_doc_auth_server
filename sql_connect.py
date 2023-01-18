@@ -1,5 +1,5 @@
 import datetime
-import hashlib
+from hashlib import sha256
 
 from fastapi_asyncpg import configure_asyncpg
 from app_init import app
@@ -55,11 +55,11 @@ async def create_token(db: Depends, user_id, token_type):
     else:
         death_date = create_date + datetime.timedelta(days=30)
     now = datetime.datetime.now()
-    token = hashlib.shake_256(f"{now}".encode('utf-8'))
-    await db.execute(f"INSERT INTO token (user_id, token, token_type, create_date, death_date) "
-                     f"VALUES ($1, $2, $3, $4) "
-                     f"ON CONFLICT DO NOTHING];", user_id, token, token_type,
-                     create_date, death_date)
+    token = sha256(f"{user_id}.{now}".encode('utf-8')).hexdigest()
+    token = await db.fetch(f"INSERT INTO token (user_id, token, token_type, create_date, death_date) "
+                           f"VALUES ($1, $2, $3, $4, $5) "
+                           f"ON CONFLICT DO NOTHING RETURNING token;", user_id, token, token_type,
+                           create_date, death_date)
     return token
 
 
@@ -77,15 +77,42 @@ async def read_data_2_were(db: Depends, table: str, id_name1: str, id_name2: str
 
 # Создаем новую таблицу
 async def get_token(db: Depends, token_type: str, token: str):
-    create_date = datetime.datetime.now()
-    if token_type == 'access':
-        death_date = create_date + datetime.timedelta(minutes=30)
-    else:
-        death_date = create_date + datetime.timedelta(days=30)
+    now = datetime.datetime.now()
     data = await db.fetch(f"SELECT user_id FROM token "
                           f"WHERE token_type = $1 "
                           f"AND token = $2 "
                           f"AND death_date > $3 "
                           f"AND change_password = 0;",
-                          token_type, token, death_date)
+                          token_type, token, now)
     return data
+
+
+# Создаем новую таблицу
+async def update_user(db: Depends, email: str, name: str, surname: str, status: str, user_id: int):
+    user_id = await db.fetch(f"UPDATE all_users SET email=$1, name=$2, surname=$3, status=$4 WHERE id=$5;",
+                             email, name, surname, status, user_id)
+    return user_id
+
+
+# Обновляем информацию
+async def update_user_active(db: Depends, user_id: int):
+    now = datetime.datetime.now()
+    await db.fetch(f"UPDATE all_users SET last_active=$1 WHERE id=$2;",
+                   now, user_id)
+
+
+# Обновляем информацию
+async def update_password(db: Depends, user_id: int, password_hash: str):
+    await db.fetch(f"UPDATE all_users SET password_hash=$1 WHERE id=$2;",
+                   password_hash, user_id)
+
+
+# Удаляем токены
+async def delete_old_tokens(db: Depends):
+    now = datetime.datetime.now()
+    await db.execute(f"DELETE FROM token WHERE death_date < $1", now)
+
+
+# Удаляем токены
+async def delete_all_tokens(db: Depends, user_id: int):
+    await db.execute(f"DELETE FROM token WHERE user_id = $1", user_id)
