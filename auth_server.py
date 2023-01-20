@@ -79,7 +79,7 @@ async def create_new_access_token(refresh_token: str, db=Depends(data_b.connecti
                         status_code=_status.HTTP_401_UNAUTHORIZED)
     await conn.delete_old_tokens(db=db)
     access = await conn.create_token(db=db, user_id=user_id[0][0], token_type='access')
-    await conn.update_user_active(db=db, user_id=user_id)
+    await conn.update_user_active(db=db, user_id=user_id[0][0])
     return {"ok": True,
             'user_id': user_id[0][0],
             'access_token': access[0][0]}
