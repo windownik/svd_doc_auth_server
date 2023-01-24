@@ -1,12 +1,25 @@
 import datetime
+import os
 from hashlib import sha256
 
 from fastapi_asyncpg import configure_asyncpg
 from app_init import app
 from fastapi import Depends
 
+
+password = os.environ.get("DATABASE_PASS")
+host = os.environ.get("DATABASE_HOST")
+port = os.environ.get("DATABASE_PORT")
+db_name = os.environ.get("DATABASE_NAME")
+
+password = 102015 if password is None else password
+host = '127.0.0.1' if host is None else host
+port = 5432 if port is None else port
+db_name = 'svd_api' if db_name is None else db_name
+
+
 # Создаем новую таблицу
-data_b = configure_asyncpg(app, 'postgres://postgres:102015@localhost:5432/svd_api')
+data_b = configure_asyncpg(app, f'postgres://postgres:{password}@{host}:{port}/{db_name}')
 
 
 async def create_all_users_table(db):
