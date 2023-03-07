@@ -108,7 +108,7 @@ async def find_phone_in_db(phone: int, password: str, db=Depends(data_b.connecti
     """Check user in database"""
     user = await conn.read_data(db=db, name='id, password_hash', table='all_users', id_name='phone', id_data=phone)
     if not user:
-        return Response(content="now user in database",
+        return Response(content="no user in database",
                         status_code=_status.HTTP_226_IM_USED)
     pass_hash = sha256(password.encode('utf-8')).hexdigest()
     if pass_hash != user[0][1]:
@@ -128,7 +128,7 @@ async def find_phone_in_db(phone: int, password: str, new_password: str, db=Depe
     """Check user in database"""
     user = await conn.read_data(db=db, name='id, password_hash', table='all_users', id_name='phone', id_data=phone)
     if not user:
-        return Response(content="now user in database",
+        return Response(content="no user in database",
                         status_code=_status.HTTP_226_IM_USED)
     pass_hash = sha256(password.encode('utf-8')).hexdigest()
     if pass_hash != user[0][1]:

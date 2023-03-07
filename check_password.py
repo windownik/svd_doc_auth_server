@@ -9,7 +9,7 @@ async def check_new_user_data(password: str, status: str, phone: int, conn, db):
     if not check_password(password=password):
         return Response(content="bad letters in password",
                         status_code=_status.HTTP_226_IM_USED)
-    if status not in ('simple', 'creator', 'admin'):
+    if status not in ('simple', 'creator', 'admin', '0'):
         return Response(content="wrong status",
                         status_code=_status.HTTP_226_IM_USED)
 
